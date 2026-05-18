@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditor de Posts X — @NatyShi_</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f0f11;
+    --bg2:       #17171a;
+    --bg3:       #1e1e23;
+    --border:    #2a2a32;
+    --border2:   #38383f;
+    --text:      #f0eff4;
+    --muted:     #8b8a96;
+    --accent:    #c8f135;
+    --accent2:   #a8d020;
+    --red:       #ff5f5f;
+    --orange:    #ffaa44;
+    --green:     #5ddf8a;
+    --blue:      #60b4ff;
+    --mono:      'DM Mono', monospace;
+    --display:   'Syne', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--display); min-height: 100vh; }
+  body { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 40px; }
+  .header-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #0f0f11;
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 4px; letter-spacing: .5px;
+    margin-bottom: 14px;
+  }
+  .header h1 { font-size: clamp(24px, 4vw, 36px); font-weight: 800; line-height: 1.15; letter-spacing: -.5px; }
+  .header h1 span { color: var(--accent); }
+  .header p { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* ── Format selector ── */
+  .section-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .fmt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 24px; }
+  @media(max-width: 580px){ .fmt-grid { grid-template-columns: repeat(3,1fr); } }
+
+  .fmt-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 8px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--bg2);
+    color: var(--muted); font-family: var(--display); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .18s; text-align: center; line-height: 1.3;
+  }
+  .fmt-btn .ico { font-size: 20px; }
+  .fmt-btn:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
+  .fmt-btn.active {
+    border-color: var(--accent); color: var(--accent); background: rgba(200,241,53,.08);
+  }
+
+  /* ── Textarea ── */
+  .textarea-wrap { position: relative; margin-bottom: 6px; }
+  textarea {
+    width: 100%; min-height: 130px; resize: vertical;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 16px; color: var(--text);
+    font-family: var(--mono); font-size: 14px; line-height: 1.7;
+    transition: border-color .18s;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .char-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .char-count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .char-count.warn { color: var(--orange); }
+  .char-count.over { color: var(--red); }
+
+  /* ── Checkboxes ── */
+  .checks-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+  .chk-label {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 7px 13px; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    transition: all .15s; user-select: none;
+  }
+  .chk-label:hover { border-color: var(--border2); color: var(--text); }
+  .chk-label input { display: none; }
+  .chk-label.checked { border-color: var(--accent); color: var(--accent); background: rgba(200,241,53,.08); }
+  .chk-ico { font-size: 15px; }
+
+  /* ── Analyze button ── */
+  .btn-analyze {
+    width: 100%; padding: 16px; border-radius: 12px;
+    background: var(--accent); color: #0f0f11;
+    font-family: var(--display); font-size: 15px; font-weight: 700;
+    border: none; cursor: pointer; letter-spacing: .3px;
+    transition: background .15s, transform .1s;
+  }
+  .btn-analyze:hover { background: var(--accent2); }
+  .btn-analyze:active { transform: scale(.99); }
+
+  /* ── Results ── */
+  .results { display: none; margin-top: 36px; }
+  .results.show { display: block; animation: fadeUp .35s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  .score-card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 28px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  }
+  .score-ring {
+    width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 3px solid var(--border2); position: relative;
+  }
+  .score-ring .num { font-size: 30px; font-weight: 800; line-height: 1; }
+  .score-ring .lbl { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  .score-info {}
+  .score-grade { font-size: 26px; font-weight: 800; letter-spacing: -.3px; }
+  .score-verdict { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 6px; max-width: 380px; line-height: 1.6; }
+
+  /* ring color states */
+  .ring-great { border-color: #5ddf8a; background: rgba(93,223,138,.07); }
+  .ring-great .num { color: #5ddf8a; }
+  .ring-good  { border-color: #60b4ff; background: rgba(96,180,255,.07); }
+  .ring-good  .num { color: #60b4ff; }
+  .ring-meh   { border-color: #ffaa44; background: rgba(255,170,68,.07); }
+  .ring-meh   .num { color: #ffaa44; }
+  .ring-bad   { border-color: #ff5f5f; background: rgba(255,95,95,.07); }
+  .ring-bad   .num { color: #ff5f5f; }
+
+  /* ── Signal rows ── */
+  .signals { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .sig-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    transition: border-color .15s;
+  }
+  .sig-row:hover { border-color: var(--border2); }
+  .sig-ico { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+  .sig-text { flex: 1; font-family: var(--mono); font-size: 12px; color: #c0bfca; line-height: 1.55; }
+  .sig-badge {
+    flex-shrink: 0; font-family: var(--mono); font-size: 10px; font-weight: 500;
+    padding: 3px 9px; border-radius: 100px; white-space: nowrap;
+  }
+  .b-ok  { background: rgba(93,223,138,.15);  color: #5ddf8a; }
+  .b-wn  { background: rgba(255,170,68,.15);  color: #ffaa44; }
+  .b-bad { background: rgba(255,95,95,.15);   color: #ff5f5f; }
+  .b-inf { background: rgba(96,180,255,.15);  color: #60b4ff; }
+  .b-neu { background: rgba(139,138,150,.15); color: #8b8a96; }
+
+  /* ── Tips ── */
+  .tips { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .tip-card {
+    border-left: 3px solid var(--accent);
+    background: var(--bg2); border-radius: 0 10px 10px 0;
+    padding: 14px 16px;
+  }
+  .tip-card .tip-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .tip-card .tip-body { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Improve button ── */
+  .btn-improve {
+    width: 100%; padding: 13px; border-radius: 10px;
+    background: transparent; border: 1.5px solid var(--border2);
+    color: var(--text); font-family: var(--display); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-improve:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,241,53,.05); }
+
+  /* ── Divider ── */
+  .div { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* ── Tip callout (format-specific) ── */
+  .fmt-callout {
+    display: none; background: rgba(200,241,53,.06);
+    border: 1.5px solid rgba(200,241,53,.25); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px;
+    font-family: var(--mono); font-size: 12px; color: #d4f06a; line-height: 1.6;
+  }
+  .fmt-callout.show { display: block; }
+
+  /* ── Tweet Preview ── */
+  .preview-wrap {
+    margin-bottom: 28px;
+    display: none;
+  }
+  .preview-wrap.show { display: block; }
+
+  .preview-device {
+    background: #000;
+    border-radius: 16px;
+    border: 1.5px solid #2a2a32;
+    overflow: hidden;
+    max-width: 400px;
+  }
+  .preview-statusbar {
+    background: #000;
+    padding: 10px 18px 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #666;
+  }
+  .preview-feed-bar {
+    display: flex;
+    gap: 16px;
+    padding: 10px 18px 0;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .preview-tab {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    padding-bottom: 8px;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+  .preview-tab.active-tab {
+    color: #fff;
+    border-bottom: 2px solid #1d9bf0;
+  }
+
+  .preview-tweet {
+    padding: 14px 16px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .preview-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #c8f135, #60b4ff);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #000;
+    font-family: var(--display);
+  }
+  .preview-body { flex: 1; min-width: 0; }
+  .preview-username {
+    display: flex; align-items: baseline; gap: 5px;
+    margin-bottom: 3px;
+  }
+  .preview-name {
+    font-size: 14px; font-weight: 700; color: #fff;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+  .preview-handle {
+    font-size: 13px; color: #555;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+  .preview-text-wrap {
+    position: relative;
+  }
+  .preview-text {
+    font-size: 14px; line-height: 1.5; color: #e7e9ea;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    word-break: break-word; white-space: pre-wrap;
+  }
+  .preview-text .visible-part { }
+  .preview-text .hidden-part { display: none; }
+  .preview-fade {
+    display: none;
+    position: relative; margin-top: 2px;
+  }
+  .preview-fade::before {
+    content: '';
+    position: absolute;
+    top: -28px; left: 0; right: 0; height: 28px;
+    background: linear-gradient(to bottom, transparent, #000);
+    pointer-events: none;
+  }
+  .show-more-btn {
+    display: inline-block;
+    color: #1d9bf0;
+    font-size: 14px;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    cursor: default;
+    margin-top: 4px;
+  }
+  .preview-cutline {
+    display: none;
+    align-items: center; gap: 8px;
+    margin: 6px 0 2px;
+  }
+  .preview-cutline.show { display: flex; }
+  .cutline-bar {
+    flex: 1; height: 1px;
+    background: repeating-linear-gradient(
+      90deg, #ff5f5f 0px, #ff5f5f 6px, transparent 6px, transparent 12px
+    );
+  }
+  .cutline-label {
+    font-family: var(--mono); font-size: 9px; color: #ff5f5f;
+    white-space: nowrap; letter-spacing: .5px; text-transform: uppercase;
+  }
+
+  .preview-actions {
+    display: flex; gap: 16px; margin-top: 12px; padding-top: 4px;
+  }
+  .preview-action {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: #555;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+  .preview-dot { width: 4px; height: 4px; border-radius: 50%; background: #1d9bf0; }
+
+  .preview-ruler {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ruler-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ruler-bar-wrap {
+    flex: 1; height: 5px; background: #1e1e23; border-radius: 3px; overflow: hidden;
+  }
+  .ruler-bar-fill {
+    height: 100%; border-radius: 3px; transition: width .3s ease;
+  }
+  .ruler-label {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    min-width: 90px; text-align: right;
+  }
+  .ruler-label span { color: var(--text); font-weight: 500; }
+  .ruler-tag {
+    font-family: var(--mono); font-size: 9px; min-width: 60px;
+    letter-spacing: .4px; text-transform: uppercase;
+  }
+  .zone-green  { color: #5ddf8a; }
+  .zone-yellow { color: #ffaa44; }
+  .zone-red    { color: #ff5f5f; }
+  .bar-green   { background: #5ddf8a; }
+  .bar-yellow  { background: #ffaa44; }
+  .bar-red     { background: #ff5f5f; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-tag">⚡ xAI Algorithm · github.com/xai-org/x-algorithm</div>
+  <h1>Auditor de posts<br><span>para X</span></h1>
+  <p>// Analizá tu post antes de publicar — basado en el código oficial del algoritmo</p>
+</div>
+
+<!-- FORMAT -->
+<div class="section-label">01 — Tipo de contenido</div>
+<div class="fmt-grid">
+  <button class="fmt-btn active" onclick="setFmt(this,'original')">
+    <span class="ico">✏️</span>Post original
+  </button>
+  <button class="fmt-btn" onclick="setFmt(this,'rt_quote')">
+    <span class="ico">💬</span>RT con cita
+  </button>
+  <button class="fmt-btn" onclick="setFmt(this,'reply')">
+    <span class="ico">↩️</span>Reply a otro
+  </button>
+  <button class="fmt-btn" onclick="setFmt(this,'thread')">
+    <span class="ico">🧵</span>Hilo (1er tweet)
+  </button>
+  <button class="fmt-btn" onclick="setFmt(this,'rt_pure')">
+    <span class="ico">🔁</span>RT sin texto
+  </button>
+</div>
+
+<div class="fmt-callout" id="fmt-callout"></div>
+
+<!-- TEXT -->
+<div class="section-label">02 — Texto del post</div>
+<div class="textarea-wrap">
+  <textarea id="post-text" placeholder="Pegá el texto de tu post aquí..."></textarea>
+</div>
+<div class="char-row">
+  <span class="char-count" id="char-count">0 / 280 caracteres</span>
+  <span style="font-family:'DM Mono',monospace;font-size:11px;color:#8b8a96;">X Premium: hasta 25.000 chars</span>
+</div>
+
+<!-- PREVIEW -->
+<div class="preview-wrap" id="preview-wrap">
+  <div class="section-label" style="margin-bottom:10px;">↳ Previsualización en tiempo real</div>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+
+    <!-- Mock phone feed -->
+    <div class="preview-device" style="flex:0 0 auto; width:min(100%,360px);">
+      <div class="preview-statusbar">
+        <span>9:41</span><span>●●● 5G ▐</span>
+      </div>
+      <div class="preview-feed-bar">
+        <span class="preview-tab">Para ti</span>
+        <span class="preview-tab active-tab">Siguiendo</span>
+      </div>
+      <div class="preview-tweet">
+        <div class="preview-avatar" id="prev-avatar">N</div>
+        <div class="preview-body">
+          <div class="preview-username">
+            <span class="preview-name">Naty Shi</span>
+            <span class="preview-handle">@NatyShi_</span>
+          </div>
+          <div class="preview-text-wrap">
+            <div class="preview-text" id="prev-text"></div>
+            <!-- línea de corte visible -->
+            <div class="preview-cutline" id="prev-cutline">
+              <div class="cutline-bar"></div>
+              <span class="cutline-label">corte "mostrar más"</span>
+              <div class="cutline-bar"></div>
+            </div>
+            <div class="preview-fade" id="prev-fade">
+              <span class="show-more-btn">Mostrar más</span>
+            </div>
+          </div>
+          <div class="preview-actions">
+            <span class="preview-action">💬 <span id="prev-replies">0</span></span>
+            <span class="preview-action">🔁 0</span>
+            <span class="preview-action">❤️ 0</span>
+            <span class="preview-action">📊</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ruler / zonas -->
+    <div style="flex:1; min-width:200px;">
+      <div class="preview-ruler">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#8b8a96;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;">Zonas de longitud</div>
+
+        <div class="ruler-row">
+          <span class="ruler-tag zone-green">Óptimo</span>
+          <div class="ruler-bar-wrap"><div class="ruler-bar-fill bar-green" id="bar-green" style="width:0%"></div></div>
+          <span class="ruler-label" id="lbl-green">0 / 140</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#5ddf8a;margin-left:64px;margin-bottom:4px;">Máximo dwell sin corte</div>
+
+        <div class="ruler-row">
+          <span class="ruler-tag zone-yellow">Atención</span>
+          <div class="ruler-bar-wrap"><div class="ruler-bar-fill bar-yellow" id="bar-yellow" style="width:0%"></div></div>
+          <span class="ruler-label" id="lbl-yellow">0 / 280</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#ffaa44;margin-left:64px;margin-bottom:4px;">Visible completo, largo</div>
+
+        <div class="ruler-row">
+          <span class="ruler-tag zone-red">Corte</span>
+          <div class="ruler-bar-wrap"><div class="ruler-bar-fill bar-red" id="bar-red" style="width:0%"></div></div>
+          <span class="ruler-label" id="lbl-red">0 chars extra</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#ff5f5f;margin-left:64px;margin-bottom:8px;">Se trunca → "Mostrar más"</div>
+
+        <div id="ruler-tip" style="font-family:'DM Mono',monospace;font-size:11px;color:#8b8a96;line-height:1.55;padding-top:6px;border-top:1px solid #2a2a32;">
+          Empezá a escribir para ver el análisis de longitud.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CHECKS -->
+<div class="section-label">03 — ¿El post incluye?</div>
+<div class="checks-grid">
+  <label class="chk-label" id="lbl-link" onclick="toggleChk(this,'h-link')">
+    <input type="checkbox" id="h-link">
+    <span class="chk-ico">🔗</span> Link externo
+  </label>
+  <label class="chk-label" id="lbl-img" onclick="toggleChk(this,'h-img')">
+    <input type="checkbox" id="h-img">
+    <span class="chk-ico">🖼️</span> Imagen
+  </label>
+  <label class="chk-label" id="lbl-vid" onclick="toggleChk(this,'h-vid')">
+    <input type="checkbox" id="h-vid">
+    <span class="chk-ico">🎥</span> Video
+  </label>
+  <label class="chk-label" id="lbl-q" onclick="toggleChk(this,'h-q')">
+    <input type="checkbox" id="h-q">
+    <span class="chk-ico">❓</span> Pregunta directa
+  </label>
+  <label class="chk-label" id="lbl-poll" onclick="toggleChk(this,'h-poll')">
+    <input type="checkbox" id="h-poll">
+    <span class="chk-ico">📊</span> Poll/Encuesta
+  </label>
+</div>
+
+<button class="btn-analyze" onclick="analyze()">Analizar post →</button>
+
+<!-- RESULTS -->
+<div class="results" id="results">
+  <hr class="div">
+  <div class="section-label">Resultado del análisis</div>
+
+  <div class="score-card">
+    <div class="score-ring" id="score-ring">
+      <span class="num" id="score-num">—</span>
+      <span class="lbl">score</span>
+    </div>
+    <div class="score-info">
+      <div class="score-grade" id="score-grade"></div>
+      <div class="score-verdict" id="score-verdict"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Señales detectadas</div>
+  <div class="signals" id="signals"></div>
+
+  <hr class="div">
+  <div class="section-label">Recomendaciones</div>
+  <div class="tips" id="tips"></div>
+
+  <button class="btn-improve" onclick="improve()">
+    ✦ Pedirle a Claude que reescriba el post optimizado
+  </button>
+</div>
+
+<script>
+let fmt = 'original';
+
+const fmtCallouts = {
+  original: '',
+  rt_quote: '💬 RT con cita — el algoritmo lo trata como post propio parcialmente. Genera señal quote_tweet (peso positivo). Agregá opinión o pregunta real, no solo "Excelente post".',
+  reply: '↩️ Reply — no aparece en tu timeline principal. Útil para ganar visibilidad en cuentas grandes: si tu reply genera engagement propio, el algoritmo out-of-network (Phoenix) lo puede mostrar a personas que no te siguen.',
+  thread: '🧵 Hilo — el primer tweet es el que rankea y determina el alcance. El algoritmo suma dwell_time por los clicks para seguir leyendo. Hacé el primer tweet irresistible.',
+  rt_pure: '🔁 RT sin texto — bajo impacto. El algoritmo lo registra como "repost" con peso positivo bajo. No genera replies ni dwell time propio. No suma a tu author_score. Siempre mejor agregar tu perspectiva.'
+};
+
+function setFmt(btn, f) {
+  fmt = f;
+  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const callout = document.getElementById('fmt-callout');
+  callout.textContent = fmtCallouts[f];
+  callout.classList.toggle('show', !!fmtCallouts[f]);
+}
+
+function toggleChk(lbl, id) {
+  const cb = document.getElementById(id);
+  setTimeout(() => {
+    lbl.classList.toggle('checked', cb.checked);
+  }, 0);
+}
+
+const pt = document.getElementById('post-text');
+const cc = document.getElementById('char-count');
+
+// ── Previsualización en tiempo real ──────────────────────────────
+// X muestra completo hasta ~280 chars en desktop / ~210 en mobile.
+// Más allá corta con "Mostrar más". Usamos 280 como umbral visible
+// y marcamos la zona óptima en ≤140 (máximo dwell sin necesidad
+// de ningún scroll ni click).
+
+const CUT_OPTIMAL = 140;   // zona verde: se lee de un vistazo
+const CUT_VISIBLE = 280;   // zona amarilla: visible pero largo
+// > 280 → zona roja: truncado con "Mostrar más"
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updatePreview() {
+  const raw  = pt.value;
+  const len  = raw.length;
+  const wrap = document.getElementById('preview-wrap');
+
+  // Mostrar el bloque preview en cuanto hay algo escrito
+  wrap.classList.toggle('show', len > 0);
+  if (len === 0) return;
+
+  // ── Render del texto en el mock ──
+  const prevText  = document.getElementById('prev-text');
+  const prevFade  = document.getElementById('prev-fade');
+  const prevCut   = document.getElementById('prev-cutline');
+
+  if (len <= CUT_VISIBLE) {
+    // Se ve completo
+    prevText.innerHTML = escapeHtml(raw);
+    prevFade.style.display = 'none';
+    prevCut.classList.remove('show');
+  } else {
+    // Truncado: mostramos los primeros ~280 chars con línea de corte
+    const visible = raw.slice(0, CUT_VISIBLE);
+    const hidden  = raw.slice(CUT_VISIBLE);
+    prevText.innerHTML = escapeHtml(visible);
+    prevCut.classList.add('show');
+    prevFade.style.display = 'block';
+  }
+
+  // ── Barras de zona ──
+  const optPct  = Math.min(100, (Math.min(len, CUT_OPTIMAL) / CUT_OPTIMAL) * 100);
+  const visPct  = len > CUT_OPTIMAL
+    ? Math.min(100, ((Math.min(len, CUT_VISIBLE) - CUT_OPTIMAL) / (CUT_VISIBLE - CUT_OPTIMAL)) * 100)
+    : 0;
+  const overPct = len > CUT_VISIBLE
+    ? Math.min(100, ((len - CUT_VISIBLE) / 200) * 100)   // 200 chars extra = barra llena
+    : 0;
+
+  document.getElementById('bar-green').style.width  = optPct  + '%';
+  document.getElementById('bar-yellow').style.width = visPct  + '%';
+  document.getElementById('bar-red').style.width    = overPct + '%';
+
+  document.getElementById('lbl-green').innerHTML  = `<span>${Math.min(len,CUT_OPTIMAL)}</span> / 140`;
+  document.getElementById('lbl-yellow').innerHTML = `<span>${len > CUT_OPTIMAL ? Math.min(len,CUT_VISIBLE)-CUT_OPTIMAL : 0}</span> / 140 extra`;
+  document.getElementById('lbl-red').innerHTML    = len > CUT_VISIBLE
+    ? `<span>${len - CUT_VISIBLE}</span> chars ocultos`
+    : `<span>0</span> chars ocultos`;
+
+  // ── Tip contextual ──
+  const tip = document.getElementById('ruler-tip');
+  if (len <= 60) {
+    tip.innerHTML = '⚡ Muy corto — hook puro. Funciona si es contundente. Acompañalo con imagen o video para sumar dwell time.';
+    tip.style.color = '#ffaa44';
+  } else if (len <= CUT_OPTIMAL) {
+    tip.innerHTML = '✅ Zona óptima — se lee de un vistazo, sin scroll. Máximo dwell time por carácter. Ideal para engagement alto.';
+    tip.style.color = '#5ddf8a';
+  } else if (len <= 200) {
+    tip.innerHTML = '✅ Buena longitud — visible completo, suficiente contexto. El lector no necesita expandir nada.';
+    tip.style.color = '#5ddf8a';
+  } else if (len <= CUT_VISIBLE) {
+    tip.innerHTML = '⚠️ Zona larga — todavía visible sin corte, pero cerca del límite. Considerá si podés recortar algo sin perder el mensaje clave.';
+    tip.style.color = '#ffaa44';
+  } else {
+    const hidden = len - CUT_VISIBLE;
+    tip.innerHTML = `🔴 Truncado — los últimos <strong style="color:#ff5f5f">${hidden} caracteres</strong> quedan ocultos tras "Mostrar más". El usuario tiene que hacer click para leerlos. Cada click no-dado es engagement perdido. Recortá o dividí en hilo.`;
+    tip.style.color = '#ff5f5f';
+  }
+}
+
+pt.addEventListener('input', () => {
+  const l = pt.value.length;
+  cc.textContent = l + ' / 280 caracteres';
+  cc.className = 'char-count' + (l > 280 ? ' over' : l > 240 ? ' warn' : '');
+  updatePreview();
+});
+
+function analyze() {
+  const text = pt.value.trim();
+  if (fmt !== 'rt_pure' && !text) { alert('Pegá el texto de tu post primero.'); return; }
+
+  const hasLink = document.getElementById('h-link').checked;
+  const hasImg  = document.getElementById('h-img').checked;
+  const hasVid  = document.getElementById('h-vid').checked;
+  const hasQ    = document.getElementById('h-q').checked;
+  const hasPoll = document.getElementById('h-poll').checked;
+
+  const len    = text.length;
+  const htags  = (text.match(/#\w+/g)||[]).length;
+  const upperR = text.replace(/[^A-Za-z]/g,'').length > 0
+    ? (text.match(/[A-Z]/g)||[]).length / text.replace(/[^A-Za-z]/g,'').length : 0;
+  const hasCTA = /\b(respond[eé]|comentá|reply|contá|compartí|cuál|votá|qué pensás|decime|acordás|qué harías)\b/i.test(text);
+  const isQ    = hasQ || /\?/.test(text);
+  const badPat = /\b(follow|sígueme|follow back|RT para|giveaway|sorteo gratis)\b/i.test(text);
+  const hasDM  = /\b(DM|manda|escribime)\b/i.test(text);
+
+  let score = 50;
+  const sigs = [];
+  const tips = [];
+
+  // Formato
+  if (fmt === 'rt_pure') {
+    score = 28;
+    sigs.push({ico:'🔁', t:'RT sin texto propio — no genera dwell time ni replies. El algoritmo lo pesa bajo como "repost". No amplifica tu author_score.', b:'b-wn', v:'Bajo impacto'});
+    tips.push({title:'Siempre agregá texto a un RT', body:'Un RT con tu opinión o una pregunta se procesa como quote_tweet, que tiene peso positivo mayor que el repost simple, y además suma a tu author_score directamente.'});
+  }
+  if (fmt === 'rt_quote') {
+    score += 8;
+    sigs.push({ico:'💬', t:'RT con cita — genera señal quote_tweet (peso positivo). El algoritmo lo trata como post tuyo parcialmente si el contenido es sustancial.', b:'b-ok', v:'+8 pts'});
+    if (!isQ && !hasCTA) tips.push({title:'Agregá opinión real o pregunta a tu cita', body:'"Excelente post" no diferencia tu RT de uno sin texto. El algoritmo mira si el contenido genera replies propios para vos. Una pregunta corta puede triplicar el engagement.'});
+  }
+  if (fmt === 'reply') {
+    score += 4;
+    sigs.push({ico:'↩️', t:'Reply — visibilidad limitada en tu timeline pero útil para posicionarte. Si el reply genera engagement propio, Phoenix (el sistema out-of-network de X) puede distribuirlo a personas que no te siguen.', b:'b-inf', v:'Estratégico'});
+  }
+  if (fmt === 'thread') {
+    score += 10;
+    sigs.push({ico:'🧵', t:'Hilo — el primer tweet determina el alcance total. El algoritmo suma dwell_time por los clicks para continuar leyendo. Es el formato de mayor potencial de autoridad.', b:'b-ok', v:'+10 pts'});
+    if (!isQ) tips.push({title:'El último tweet del hilo necesita CTA', body:'El primer tweet engancha. El último convierte. El algoritmo detecta si el lector llegó hasta el final (dwell alto) y si ese tweet final generó replies o compartidos — son las señales más fuertes del hilo.'});
+  }
+
+  // Link
+  if (hasLink) {
+    score -= 20;
+    sigs.push({ico:'🔗', t:'Link en el cuerpo — penalización del 30–50% de alcance inicial (confirmado en datos 2026). X quiere retener al usuario en la plataforma.', b:'b-bad', v:'−20 pts'});
+    tips.push({title:'Mové el link al primer reply', body:'Publicá el post sin el link. Inmediatamente respondéte vos mismo con el link. Evitás la penalización Y generás un reply (señal positiva extra) que el scorer pondera.'});
+  } else {
+    score += 5;
+    sigs.push({ico:'✅', t:'Sin link externo en el cuerpo — sin penalización de distribución.', b:'b-ok', v:'+5 pts'});
+  }
+
+  // Media
+  if (hasVid) {
+    score += 15;
+    sigs.push({ico:'🎥', t:'Video — activa el scorer VQV (video quality view). El dwell time de video es la señal de mayor peso después de los replies. Asegurate que dure más de unos pocos segundos.', b:'b-ok', v:'+15 pts'});
+  }
+  if (hasImg && !hasVid) {
+    score += 8;
+    sigs.push({ico:'🖼️', t:'Imagen — dispara la señal photo_expand (peso positivo). El algoritmo detecta si el usuario expandió la imagen como indicador de interés real.', b:'b-ok', v:'+8 pts'});
+  }
+  if (!hasImg && !hasVid && fmt !== 'rt_pure') {
+    sigs.push({ico:'📎', t:'Sin media adjunta — los posts solo-texto funcionan si el contenido es muy fuerte, pero imagen o video suman señales de engagement adicionales.', b:'b-neu', v:'neutro'});
+  }
+
+  // Poll
+  if (hasPoll) {
+    score += 10;
+    sigs.push({ico:'📊', t:'Poll — genera dwell_time + click obligatorio para votar. Dos señales positivas en el weighted scorer simultáneamente.', b:'b-ok', v:'+10 pts'});
+  }
+
+  // Pregunta/CTA
+  if (isQ || hasCTA) {
+    score += 12;
+    sigs.push({ico:'❓', t:'Pregunta o CTA detectado — los replies son la señal de mayor peso en el Phoenix scorer (más que likes). Esto puede multiplicar el score final del post.', b:'b-ok', v:'+12 pts'});
+  } else if (fmt !== 'rt_pure') {
+    sigs.push({ico:'💭', t:'Sin pregunta ni CTA visible — el algoritmo pondera fuerte los replies. Una pregunta simple al final puede duplicar el engagement real versus solo likes.', b:'b-wn', v:'0 pts'});
+    if (!tips.some(t => t.title.includes('pregunta')))
+      tips.push({title:'Agregá una pregunta al final', body:'No tiene que ser forzada. Ejemplos: "¿A vos te pasó?" / "¿Cuál elegirías?" / "¿Coincidís?" — el objetivo es que el lector sienta que tiene algo que decir.'});
+  }
+
+  // DM
+  if (hasDM) {
+    score += 4;
+    sigs.push({ico:'📩', t:'Menciona DM — activa share_via_dm como señal. El algoritmo rastrea DM shares como indicador de contenido de alto valor percibido.', b:'b-ok', v:'+4 pts'});
+  }
+
+  // Hashtags
+  if (htags === 0) {
+    score += 3;
+    sigs.push({ico:'✅', t:'Sin hashtags — correcto para 2025–2026. El algoritmo usa embeddings semánticos, no hashtags. Son ruido visual que puede generar "not interested".', b:'b-ok', v:'+3 pts'});
+  } else if (htags <= 2) {
+    sigs.push({ico:'#️⃣', t: htags + ' hashtag(s) — aceptable como marca personal, pero no aumentan el alcance orgánico. El algoritmo no los usa para categorización.', b:'b-neu', v:'neutro'});
+  } else {
+    score -= 8;
+    sigs.push({ico:'#️⃣', t: htags + ' hashtags — el exceso puede generar señal "not interested" en tu audiencia, que tiene peso negativo en el scorer.', b:'b-bad', v:'−8 pts'});
+  }
+
+  // Longitud
+  if (fmt !== 'rt_pure') {
+    if (len > 0 && len < 60) {
+      sigs.push({ico:'📏', t:'Post muy corto ('+len+' chars) — puede ser un hook poderoso pero reduce el dwell time esperado. Ideal si va acompañado de imagen o video.', b:'b-wn', v:'atención'});
+    } else if (len >= 60 && len <= 280) {
+      score += 5;
+      sigs.push({ico:'📏', t:'Longitud óptima ('+len+' chars) — maximiza dwell time sin truncado. El rango 100–240 chars es el de mejor rendimiento histórico.', b:'b-ok', v:'+5 pts'});
+    } else if (len > 280) {
+      score -= 4;
+      sigs.push({ico:'📏', t:'Se trunca con "Mostrar más" ('+len+' chars) — reduce el engagement de usuarios menos comprometidos que no hacen click para expandir.', b:'b-wn', v:'−4 pts'});
+    }
+  }
+
+  // Mayúsculas
+  if (upperR > 0.3) {
+    score -= 5;
+    sigs.push({ico:'⚠️', t:'Muchas mayúsculas — riesgo de señal de spam percibida por el usuario, generando "not interested" o mutes (ambos con peso negativo fuerte en el scorer).', b:'b-wn', v:'−5 pts'});
+  }
+
+  // Spam patterns
+  if (badPat) {
+    score -= 15;
+    sigs.push({ico:'🚫', t:'Frases de engagement bait detectadas — generan mutes y reports. Son las señales más negativas del algoritmo: block_author, mute_author y report tienen pesos fuertemente negativos.', b:'b-bad', v:'−15 pts'});
+  }
+
+  score = Math.max(0, Math.min(100, score));
+
+  let grade, verdict, ringClass, gradeColor;
+  if (score >= 80) {
+    grade='Excelente'; verdict='Post bien posicionado para el algoritmo. Alta probabilidad de amplificación orgánica.';
+    ringClass='ring-great'; gradeColor='#5ddf8a';
+  } else if (score >= 60) {
+    grade='Bueno'; verdict='Post sólido. Revisá las señales en naranja para subir el score antes de publicar.';
+    ringClass='ring-good'; gradeColor='#60b4ff';
+  } else if (score >= 40) {
+    grade='Regular'; verdict='Hay puntos débiles. Las señales en rojo son prioritarias para corregir.';
+    ringClass='ring-meh'; gradeColor='#ffaa44';
+  } else {
+    grade='Bajo'; verdict='Este post probablemente no sea amplificado. Reescribilo antes de publicar.';
+    ringClass='ring-bad'; gradeColor='#ff5f5f';
+  }
+
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('score-grade').textContent = grade;
+  document.getElementById('score-grade').style.color = gradeColor;
+  document.getElementById('score-verdict').textContent = verdict;
+  const ring = document.getElementById('score-ring');
+  ring.className = 'score-ring ' + ringClass;
+
+  const sl = document.getElementById('signals');
+  sl.innerHTML = '';
+  sigs.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'sig-row';
+    d.innerHTML = `<span class="sig-ico">${s.ico}</span><span class="sig-text">${s.t}</span><span class="sig-badge ${s.b}">${s.v}</span>`;
+    sl.appendChild(d);
+  });
+
+  const tl = document.getElementById('tips');
+  tl.innerHTML = '';
+  if (tips.length === 0) {
+    tl.innerHTML = '<div class="tip-card"><div class="tip-title">✦ Post bien optimizado</div><div class="tip-body">Publicá y monitoreá el engagement en las primeras 2 horas — ese impulso inicial le señala al algoritmo la relevancia del post para distribuirlo más ampliamente.</div></div>';
+  } else {
+    tips.forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'tip-card';
+      d.innerHTML = `<div class="tip-title">${t.title}</div><div class="tip-body">${t.body}</div>`;
+      tl.appendChild(d);
+    });
+  }
+
+  const res = document.getElementById('results');
+  res.style.display = 'block';
+  res.classList.add('show');
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function improve() {
+  const txt = pt.value;
+  const fmtLabel = {original:'post original', rt_quote:'RT con cita', reply:'reply', thread:'primer tweet de un hilo', rt_pure:'RT'}[fmt];
+  alert('Copiá este prompt y pegalo en Claude:\n\n"Reescribí este ' + fmtLabel + ' para que sea mejor puntuado por el algoritmo de X (más replies, dwell time, sin links en el cuerpo, con pregunta al final). Texto actual:\n\n' + txt + '"');
+}
+</script>
+</body>
+</html>
