@@ -2,7 +2,7 @@
 
 **Herramienta gratuita para analizar y mejorar tus posts antes de publicarlos**, basada en el código oficial del algoritmo de X publicado por xAI en GitHub.
 
-→ **[Usá la herramienta ahora](https://TU-USUARIO.github.io/x-post-auditor/)** *(reemplazá con tu URL de GitHub Pages)*
+→ **[Usá la herramienta ahora](https://natyshi.github.io/x-post-auditor/)** 
 
 Creada por **[@NatyShi_](https://x.com/NatyShi_)** - solopreneur, product builder.
 
